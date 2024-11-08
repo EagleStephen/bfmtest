@@ -1,0 +1,46 @@
+import ate_fpga_ZZZZ_tb_lib::*;
+
+module spi_testbench;
+    // SPI signals
+    logic mcu_spi_clk;
+    logic mcu_spi_mosi;
+    logic mcu_spi_ss_n;
+    logic mcu_spi_miso;
+
+    // Variables for transaction data
+    logic [15:0] wr_data = 16'hA5A5;
+    logic [15:0] rd_data;
+    parameter int clk_period = 100; // Clock period in ns for simulation
+
+    // SPI Master Initialization in Top-Level
+    initial begin
+        $display("Starting SPI Testbench...");
+
+        // Ensure SPI signals start in a known state
+        mcu_spi_ss_n = 1;
+        mcu_spi_clk = 0;
+        mcu_spi_mosi = 0;
+
+        // Wait before starting SPI transaction
+        #200;
+
+        // Begin SPI Transaction
+        mcu_spi_ss_n = 0; // Enable SPI Slave (Active Low)
+        for (int i = 15; i >= 0; i--) begin
+            mcu_spi_mosi = wr_data[i]; // Send each bit of wr_data on MOSI
+            # (clk_period / 2);
+            mcu_spi_clk = 1; // Toggle clock high
+            # (clk_period / 2);
+            rd_data[i] = mcu_spi_miso; // Read from MISO if required
+            mcu_spi_clk = 0; // Toggle clock low
+        end
+        mcu_spi_ss_n = 1; // Disable SPI Slave
+
+        // Display results
+        $display("SPI Write Transaction Complete. Data Sent: %h", wr_data);
+        $display("SPI Read Data Received: %h", rd_data);    
+        
+        $finish;
+    end
+
+endmodule
